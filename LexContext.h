@@ -92,6 +92,11 @@ template<const size_t S> class LexContext {
     size_t captureCount() const {
       return _captureCount;
     }
+    void setCaptureCount(size_t size) {
+			if(size>S-1) return false;
+			_capture[size]=0;
+			_captureCount = size;
+    }
     size_t captureMax() const {
       return S;
     }
