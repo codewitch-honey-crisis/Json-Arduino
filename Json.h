@@ -67,7 +67,7 @@ template<size_t S> class JsonReader {
             _lc.advance();
             if(LexContext<S>::EndOfInput==_lc.current())
 							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);
               _state = Error;
             break;
           case '\"':
@@ -83,7 +83,7 @@ template<size_t S> class JsonReader {
             }
             if(LexContext<S>::EndOfInput==_lc.current()) {
 							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG);              
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);              
 							_state = Error;
 						}
             break;
@@ -108,7 +108,7 @@ template<size_t S> class JsonReader {
             ++depth;
             if(LexContext<S>::EndOfInput==_lc.advance()) {
 							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG);              
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);              
               _state = Error;
               return;
             }
@@ -126,7 +126,7 @@ template<size_t S> class JsonReader {
             }
             if(LexContext<S>::EndOfInput==_lc.current()) {
 							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
               _state = Error;
 						}
             break;
@@ -149,7 +149,7 @@ template<size_t S> class JsonReader {
             _lc.advance();
             if(LexContext<S>::EndOfInput==_lc.current())
 							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
               _state = Error;
             break;
           case '{':
@@ -157,7 +157,7 @@ template<size_t S> class JsonReader {
             _lc.advance();
             if(LexContext<S>::EndOfInput==_lc.current())
 							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);
               _state = Error;
             break;
           case '\"':
@@ -174,7 +174,7 @@ template<size_t S> class JsonReader {
             }
             if(LexContext<S>::EndOfInput==_lc.current()) {
 							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
               _state = Error;
 						}
             break;
@@ -189,7 +189,7 @@ template<size_t S> class JsonReader {
             }
             if(LexContext<S>::EndOfInput==_lc.current()) {
 							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);
               _state = Error;
 						}
             break;
@@ -205,7 +205,7 @@ template<size_t S> class JsonReader {
     {
       if('\"'!=_lc.current()) {
 					_lastError = JSON_ERROR_UNTERMINATED_STRING;
-					strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_STRING_MSG);
+					strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_STRING_MSG,S-1);
          _state = Error;
          return;
       }
@@ -213,7 +213,7 @@ template<size_t S> class JsonReader {
       _lc.trySkipUntil('\"', false);
       if('\"'!=_lc.current()) {
 					_lastError = JSON_ERROR_UNTERMINATED_STRING;
-					strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_STRING_MSG);
+					strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_STRING_MSG,S-1);
          _state = Error;
          return;
       }
@@ -270,7 +270,7 @@ value_case:
               _lc.trySkipWhiteSpace();
               if (!read()) { // read the next value
 								_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
                 _state = Error;
               }
               return true;
@@ -299,7 +299,7 @@ value_case:
               qc = _lc.current();
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
@@ -311,7 +311,7 @@ value_case:
                       isdigit((char)_lc.current()))) {
                 if (!_lc.capture()) {
 									_lastError = JSON_ERROR_OUT_OF_MEMORY;
-									strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+									strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                   _state = Error;
                   return true;
                 }
@@ -321,7 +321,20 @@ value_case:
             case '\"':
               _lc.capture();
               _lc.advance();
-              _lc.tryReadUntil('\"', '\\', true);
+              if(!_lc.tryReadUntil('\"', '\\', true)) {
+								if(LexContext<S>::EndOfInput==_lc.current()) {
+									_lastError = JSON_ERROR_UNTERMINATED_STRING;
+									strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_STRING_MSG,S-1);
+                  _state = Error;
+                  return true;
+
+								} else {
+									_lastError = JSON_ERROR_OUT_OF_MEMORY;
+									strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
+                  _state = Error;
+                  return true;
+								}
+							}
               _lc.trySkipWhiteSpace();
               if (':' == _lc.current())
               {
@@ -329,7 +342,7 @@ value_case:
                 _lc.trySkipWhiteSpace();
                 if (LexContext<S>::EndOfInput == _lc.current()) {
 									_lastError = JSON_ERROR_KEY_NO_VALUE;
-									strcpy_P(_lc.captureBuffer(),JSON_ERROR_KEY_NO_VALUE_MSG);
+									strncpy_P(_lc.captureBuffer(),JSON_ERROR_KEY_NO_VALUE_MSG,S-1);
                   _state = Error;
                   return true;
                 }
@@ -339,174 +352,175 @@ value_case:
             case 't':
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('r' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('u' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('e' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               _lc.advance();
               _lc.trySkipWhiteSpace();
               ch = _lc.current();
-              if (',' != ch && ']' != ch && '}' != ch && -1 != ch) {
+              if (',' != ch && ']' != ch && '}' != ch && LexContext<S>::EndOfInput != ch) {
 								_lastError = JSON_ERROR_UNEXPECTED_VALUE;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG,S-1);
                 _state = Error;
               }
               return true;
             case 'f':
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('a' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('l' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('s' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('e' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               _lc.advance();
               _lc.trySkipWhiteSpace();
               ch = _lc.current();
-              if (',' != ch && ']' != ch && '}' != ch && -1 != ch) {
+              if (',' != ch && ']' != ch && '}' != ch && LexContext<S>::EndOfInput != ch) {
 								_lastError = JSON_ERROR_UNEXPECTED_VALUE;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG,S-1);
                 _state = Error;
               }
               return true;
             case 'n':
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('u' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('l' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if ('l' != _lc.advance()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               if (!_lc.capture()) {
 								_lastError = JSON_ERROR_OUT_OF_MEMORY;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_OUT_OF_MEMORY_MSG,S-1);
                 _state = Error;
                 return true;
               }
               _lc.advance();
               _lc.trySkipWhiteSpace();
               ch = _lc.current();
-              if (',' != ch && ']' != ch && '}' != ch && -1 != ch) {
+              if (',' != ch && ']' != ch && '}' != ch && LexContext<S>::EndOfInput != ch) {
 								_lastError = JSON_ERROR_UNEXPECTED_VALUE;
-								strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG);
+								strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG,S-1);
                 _state = Error;
               }
               return true;
             default:
+							Serial.printf("Line %d, Column %d, Position %d\r\n",_lc.line(),_lc.column(),(int32_t)_lc.position());
 							_lastError = JSON_ERROR_UNEXPECTED_VALUE;
-							strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG);
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG,S-1);
               _state = Error;
               return true;
 
@@ -516,6 +530,7 @@ value_case:
           goto value_case;
       }
     }
+
     bool skipSubtree()
     {
       switch (_state)
@@ -558,7 +573,7 @@ value_case:
           return true;
         default:
 					_lastError = JSON_ERROR_UNKNOWN_STATE;
-					strcpy_P(_lc.captureBuffer(),JSON_ERROR_UNKNOWN_STATE_MSG);
+					strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNKNOWN_STATE_MSG,S-1);
           _state = Error;
           return true;
       }
