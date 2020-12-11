@@ -59,6 +59,12 @@ template<size_t S> class JsonReader {
         switch (_lc.current())
         {
           case '[':
+						if(LexContext<S>::EndOfInput==_lc.advance()) {
+							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);              
+              _state = Error;
+              return;
+						}
             skipArrayPart();
             break;
             
@@ -78,7 +84,7 @@ template<size_t S> class JsonReader {
             _lc.advance();
             if (depth == 0)
             {
-							_lc.trySkipWhitespace();
+							_lc.trySkipWhiteSpace();
               return;
             }
             if(LexContext<S>::EndOfInput==_lc.current()) {
@@ -102,6 +108,12 @@ template<size_t S> class JsonReader {
         switch (_lc.current())
         {
           case '{':
+						if(LexContext<S>::EndOfInput==_lc.advance()) {
+							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
+							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);              
+              _state = Error;
+              return;
+						}
             skipObjectPart();
             break;
           case '[':
@@ -115,60 +127,14 @@ template<size_t S> class JsonReader {
             break;
           case '\"':
             skipString();
+						if(Error==_state)
+							return;
             break;
           case ']':
             --depth;
             _lc.advance();
             if (depth == 0)
             {
-							_lc.trySkipWhitespace();
-              return;
-            }
-            if(LexContext<S>::EndOfInput==_lc.current()) {
-							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
-              _state = Error;
-						}
-            break;
-          default:
-            _lc.advance();
-            break;
-        }
-      }
-    }
-
-    void skipPart()
-    {
-      int depth = 1;
-      while (Error!=_state && LexContext<S>::EndOfInput != _lc.current())
-      {
-        switch (_lc.current())
-        {
-          case '[':
-            ++depth;
-            _lc.advance();
-            if(LexContext<S>::EndOfInput==_lc.current())
-							_lastError = JSON_ERROR_UNTERMINATED_ARRAY;
-							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_ARRAY_MSG,S-1);
-              _state = Error;
-            break;
-          case '{':
-            ++depth;
-            _lc.advance();
-            if(LexContext<S>::EndOfInput==_lc.current())
-							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);
-              _state = Error;
-            break;
-          case '\"':
-            skipString();
-            break;
-          case ']':
-            --depth;
-            _lc.advance();
-            if (depth == 0)
-            {
-							_state = EndArray;
 							_lc.trySkipWhiteSpace();
               return;
             }
@@ -178,22 +144,6 @@ template<size_t S> class JsonReader {
               _state = Error;
 						}
             break;
-          case '}':
-            --depth;
-            _lc.advance();
-            if (depth == 0)
-            {
-							_state = EndObject;
-							_lc.trySkipWhiteSpace();
-              return;
-            }
-            if(LexContext<S>::EndOfInput==_lc.current()) {
-							_lastError = JSON_ERROR_UNTERMINATED_OBJECT;
-							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNTERMINATED_OBJECT_MSG,S-1);
-              _state = Error;
-						}
-            break;
-
           default:
             _lc.advance();
             break;
@@ -533,7 +483,7 @@ value_case:
 
     bool skipSubtree()
     {
-      switch (_state)
+			switch (_state)
       {
         case JsonReader<S>::Error:
           return false;
@@ -550,22 +500,14 @@ value_case:
             return false;
           return skipSubtree();
         case JsonReader<S>::Array:// begin array
-#ifdef JSON_CANONICAL_SKIP
           skipArrayPart();
-#else
-          skipPart();
-#endif
           _lc.trySkipWhiteSpace();
           _state = EndArray; // end array
           return true;
         case JsonReader<S>::EndArray: // end array
           return true;
         case JsonReader<S>::Object:// begin object
-#ifdef JSON_CANONICAL_SKIP
           skipObjectPart();
-#else
-          skipPart();
-#endif
           _lc.trySkipWhiteSpace();
           _state = EndObject; // end object
           return true;
