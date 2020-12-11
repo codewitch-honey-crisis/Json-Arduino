@@ -598,9 +598,6 @@ value_case:
 			skipArrayPart();
 			_state=EndArray;
 		}
-		void skipToEnd() {
-			skipPart();
-		}
     int8_t valueType() {
       char *sz = _lc.captureBuffer();
       char ch = *sz;
