@@ -8,8 +8,8 @@ char JSON_ERROR_UNTERMINATED_OBJECT_MSG[] = PROGMEM "Unterminated object";
 char JSON_ERROR_UNTERMINATED_ARRAY_MSG[] = PROGMEM "Unterminated array";
 #define JSON_ERROR_UNTERMINATED_STRING 3
 char JSON_ERROR_UNTERMINATED_STRING_MSG[] = PROGMEM "Unterminated string";
-#define JSON_ERROR_KEY_NO_VALUE 4
-char JSON_ERROR_KEY_NO_VALUE_MSG[] = PROGMEM "Key has no value";
+#define JSON_ERROR_FIELD_NO_VALUE 4
+char JSON_ERROR_FIELD_NO_VALUE_MSG[] = PROGMEM "Field has no value";
 #define JSON_ERROR_UNEXPECTED_VALUE 5
 char JSON_ERROR_UNEXPECTED_VALUE_MSG[] = PROGMEM "Unexpected value";
 #define JSON_ERROR_UNKNOWN_STATE 6
@@ -23,7 +23,7 @@ template<size_t S> class JsonReader {
     static const int8_t EndDocument = -2;
     static const int8_t Initial = -1;
     static const int8_t Value = 0;
-    static const int8_t Key = 1;
+    static const int8_t Field = 1;
     static const int8_t Array = 2;
     static const int8_t EndArray = 3;
     static const int8_t Object = 4;
@@ -341,12 +341,12 @@ value_case:
                 _lc.advance();
                 _lc.trySkipWhiteSpace();
                 if (LexContext<S>::EndOfInput == _lc.current()) {
-									_lastError = JSON_ERROR_KEY_NO_VALUE;
-									strncpy_P(_lc.captureBuffer(),JSON_ERROR_KEY_NO_VALUE_MSG,S-1);
+									_lastError = JSON_ERROR_FIELD_NO_VALUE;
+									strncpy_P(_lc.captureBuffer(),JSON_ERROR_FIELD_NO_VALUE_MSG,S-1);
                   _state = Error;
                   return true;
                 }
-                _state = Key;
+                _state = Field;
               }
               return true;
             case 't':
@@ -518,7 +518,7 @@ value_case:
               }
               return true;
             default:
-							Serial.printf("Line %d, Column %d, Position %d\r\n",_lc.line(),_lc.column(),(int32_t)_lc.position());
+							// Serial.printf("Line %d, Column %d, Position %d\r\n",_lc.line(),_lc.column(),(int32_t)_lc.position());
 							_lastError = JSON_ERROR_UNEXPECTED_VALUE;
 							strncpy_P(_lc.captureBuffer(),JSON_ERROR_UNEXPECTED_VALUE_MSG,S-1);
               _state = Error;
@@ -545,7 +545,7 @@ value_case:
           return false;
         case JsonReader<S>::Value: // value
           return true;
-        case JsonReader<S>::Key: // key
+        case JsonReader<S>::Field: // field
           if (!read())
             return false;
           return skipSubtree();
@@ -579,7 +579,7 @@ value_case:
       }
     }
 		bool skipToIndex(int index) {
-			if (Initial==_state || Key == _state) // initial or key
+			if (Initial==_state || Field == _state) // initial or field
 				if (!read())
 				  return false;
 			if (Array==_state) { // array start
@@ -603,12 +603,12 @@ value_case:
 			}
 			return false;
 		}
-    bool skipToField(const char* key, bool searchDescendants = false) {
+    bool skipToField(const char* field, bool searchDescendants = false) {
       if (searchDescendants) {
         while (read()) {
-          if (Key == _state) { // key 
+          if (Field == _state) { // field 
             undecorate();
-            if (!strcmp(key , value()))
+            if (!strcmp(field , value()))
               return true;
           }
         }
@@ -618,32 +618,32 @@ value_case:
       {
         case JsonReader<S>::Initial:
           if (read())
-            return skipToField(key);
+            return skipToField(field);
           return false;
         case JsonReader<S>::Object:
-          while (read() && Key == _state) { // first read will move to the child field of the root
+          while (read() && Field == _state) { // first read will move to the child field of the root
             undecorate();
-            if (strcmp(key,value()))
+            if (strcmp(field,value()))
               skipSubtree(); // if this field isn't the target so just skip over the rest of it
             else
               break;
           }
-          return Key == _state;
-        case JsonReader<S>::Key: // we're already on a key
+          return Field == _state;
+        case JsonReader<S>::Field: // we're already on a field
           undecorate();
-          if (!strcmp(key,value()))
+          if (!strcmp(field,value()))
             return true;
           else if (!skipSubtree())
             return false;
 
-          while (read() && Key == _state) { // first read will move to the child field of the root
+          while (read() && Field == _state) { // first read will move to the child field of the root
             undecorate();
-            if (strcmp(key , value()))
+            if (strcmp(field , value()))
               skipSubtree(); // if this field isn't the target just skip over the rest of it
             else
               break;
           }
-          return Key == _state;
+          return Field == _state;
         default:
           return false;
       }
@@ -755,7 +755,7 @@ value_case:
     }
     char* value() {
       switch (_state) {
-        case JsonReader<S>::Key:
+        case JsonReader<S>::Field:
         case JsonReader<S>::Value:
         case JsonReader<S>::Error:
           return _lc.captureBuffer();
